@@ -22,7 +22,7 @@
 
 import threading, select, socket, time, tempfile, multiprocessing, struct, os, sys
 import _thread, signal, subprocess
-import time
+import time, math
 
 ENCODING = "ascii"
 
@@ -2055,13 +2055,13 @@ if __name__ == "__main__":
 			elif key == "b":	drone.thrust(15,0,0,0)
 			elif key == "h":	stop = True
 
-			#Checa variação das medições da própria IMU do drone.
-			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
-			print(drone.NavData["demo"][4]);
-			print(drone.NavData["demo"][2][0]);
-			print(drone.NavData["demo"][2][1]);
-			print(drone.NavData["demo"][2][2]);
-			time.sleep(1);#Delay para enxergarmos o dado na tela.
+#			#Checa variação das medições da própria IMU do drone.
+#			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
+#			print(drone.NavData["demo"][4]);
+#			print(drone.NavData["demo"][2][0]);
+#			print(drone.NavData["demo"][2][1]);
+#			print(drone.NavData["demo"][2][2]);
+#			time.sleep(1);#Delay para enxergarmos o dado na tela.
 
 
 	finally:
@@ -2070,3 +2070,146 @@ if __name__ == "__main__":
 
 
 	#print "Batterie: "+str(drone.getBattery()[0])+"%  "+str(drone.getBattery()[1])	# Gives a battery-status
+	
+def moveXY(self, X, Y):
+	self.move(self.__checkSpeedValue(X), self.__checkSpeedValue(Y),0.0,0.0)
+	
+# Esta funcao executara uma trajetoria senoidal em malha aberta, ou seja, nao compensara 
+# erros no trajeto.
+def senoComRotacao(objetoDrone):
+
+	droneLocal = objetoDrone;# Para nao termos que instanciar a classe novamente.
+	
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	distanciaAngularPercorrida = 0;# A distancia convertida em graus que o drone percorreu.
+	distanciaTotalPercorrer = 5;# O tamanho, em metros, do trajeto que o drone executara no eixo X.
+	distanciaEixoX = 0;# Quantos metros o drone andou na direcao do Eixo X.
+	
+	# Como a funcao de girar o drone nao grava o angulo anterior, precisamos passar 
+	# para ela somente o "delta" de angulo variado: anguloAtual - anguloOld = Variacao angular a ser promovida.
+	anguloOld = 0;# A angulaco que o drone tinha na ultima iteracao do loop.
+	anguloAtual = 0;# O angulo com o eixo X para o qual o drone esta se movendo.
+
+	droneLocal.moveForward();# O drone vai andando para frente enquanto variamos apenas o angulo com o exio X.
+		
+	while distanciaEixoX < distanciaTotalPercorrer:
+		
+		anguloAtual = math.atan(math.cos(distanciaAngularPercorrida))*360/(2*math.pi);# arctangente da derivada do seno nos da o angulo que o seno faz com o eixo X. No final, converte radianos para graus.
+		droneLocal.turnAngle(anguloAtual-anguloOld,1)
+		
+		time.sleep(passoTemporal);# aguardamos 1 segundo para o drone andar um pouco na nova direcao.
+		
+		distanciaEixoX += math.cos(distanciaAngularPercorrida)*droneLocal.speed*passoTemporal;# Quanto andamos na direcao eixo X.
+		distanciaAngularPercorrida = distanciaEixoX*2.0*math.pi/distanciaTotalPercorrer;# Convertemos a distancia percorrida em radianos em funcao da distancia total a percorrer.
+		
+		anguloOld = anguloAtual;# Atualizamos a posicao anterior do drone para so variar o acrescimo angular na proxima iteracao.		
+		
+		
+	droneLocal.land();# Pousamos o drone ao final.
+	
+# Esta funcao executara uma trajetoria senoidal em malha aberta, ou seja, nao compensara 
+# erros no trajeto.
+def senoSemRotacao(objetoDrone):
+
+	droneLocal = objetoDrone;# Para nao termos que instanciar a classe novamente.
+	
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	distanciaAngularPercorrida = 0;# A distancia convertida em graus que o drone percorreu.
+	distanciaTotalPercorrer = 5;# O tamanho, em metros, do trajeto que o drone executara no eixo X.
+	distanciaEixoX = 0;# Quantos metros o drone andou na direcao do Eixo X.
+
+	droneLocal.moveForward();# O drone vai andando para frente enquanto variamos apenas o angulo com o exio X.
+		
+	while distanciaEixoX < distanciaTotalPercorrer:
+	
+		moveXY(droneLocal.speed*math.cos(distanciaAngularPercorrida), droneLocal.speed)
+		
+		time.sleep(passoTemporal);# aguardamos 1 segundo para o drone andar um pouco na nova direcao.
+		
+		distanciaEixoX += droneLocal.speed*passoTemporal;# Quanto andamos na direcao eixo X.
+		distanciaAngularPercorrida = distanciaEixoX*2.0*math.pi/distanciaTotalPercorrer;# Convertemos a distancia percorrida em radianos em funcao da distancia total a percorrer.
+				
+		
+		
+	droneLocal.land();# Pousamos o drone ao final.
+	
+def trianguloComRotacao(objetoDrone):
+
+	droneLocal = objetoDrone;
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	droneLocal.moveForward();# Andando para frente.
+	time.sleep(1*passoTemporal)
+	
+#====Trajetoria triangular======================================================
+	droneLocal.turnAngle(-45,1)
+	time.sleep(2*passoTemporal)
+	
+	droneLocal.turnAngle(90,1)
+	time.sleep(4*passoTemporal)# A descida da onda triangular dura 2 vezes mais que os outros trechos!
+	
+	droneLocal.turnAngle(-90,1)
+	time.sleep(2*passoTemporal)
+	
+	droneLocal.turnAngle(45,1)
+	time.sleep(1*passoTemporal)
+#====Fim da trajetoria triangular===============================================
+
+	droneLocal.land();
+
+def trianguloComRotacaoParando(objetoDrone):
+
+	droneLocal = objetoDrone;
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	droneLocal.moveForward();# Andando para frente.
+	time.sleep(1*passoTemporal)
+	droneLocal.hover()
+	time.sleep(1*passoTemporal)
+	
+#====Trajetoria triangular======================================================
+	droneLocal.turnAngle(-45,1)
+	time.sleep(2*passoTemporal)
+	droneLocal.hover()
+	time.sleep(1*passoTemporal)
+	
+	droneLocal.turnAngle(90,1)
+	time.sleep(4)*passoTemporal# A descida da onda triangular dura 2 vezes mais que os outros trechos!
+	droneLocal.hover()
+	time.sleep(1*passoTemporal)
+	
+	droneLocal.turnAngle(-90,1)
+	time.sleep(2*passoTemporal)
+	droneLocal.hover()
+	time.sleep(1*passoTemporal)
+	
+	droneLocal.turnAngle(45,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.hover()
+	time.sleep(1*passoTemporal)
+#====Fim da trajetoria triangular===============================================
+
+	droneLocal.land();
+	
+def trainguloSemRotacao(objetoDrone):
+	
+	droneLocal = objetoDrone;
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	moveXY(-droneLocal.speed, droneLocal.speed);
+	time.sleep(2*passoTemporal)
+	
+	moveXY(droneLocal.speed, droneLocal.speed)
+	time.sleep(4*passoTemporal)
+	
+	moveXY(-droneLocal.speed, droneLocal.speed)
+	time.sleep(2*passoTemporal)
+	
+	droneLocal.land();
