@@ -111,9 +111,9 @@ class Drone(object):
 			socket.socket().connect((self.DroneIP, 21))
 			socket.socket().close()
 		except:
-			self.printRed()
+			# self.printRed()
 			#print "Drone is not online"
-			self.printDefault()
+			# self.printDefault()
 			sys.exit(9)
 
 		# Internal variables
@@ -2011,9 +2011,8 @@ if __name__ == "__main__":
 ### Here you can write your first test-codes and play around with them
 ###
 	import time
-	import ps_drone
 
-	drone = ps_drone.Drone()								# Start using drone
+	drone = Drone()								# Start using drone
 	#drone.#printBlue("Battery: ")
 
 	drone.startup()											# Connects to drone and starts subprocesses
@@ -2055,7 +2054,7 @@ if __name__ == "__main__":
 			elif key == "b":	drone.thrust(15,0,0,0)
 			elif key == "h":	stop = True
 
-#			#Checa variação das medições da própria IMU do drone.
+#			#Checa variacao das medicoes da propria IMU do drone.
 #			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
 #			print(drone.NavData["demo"][4]);
 #			print(drone.NavData["demo"][2][0]);
