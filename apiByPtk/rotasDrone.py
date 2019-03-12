@@ -2017,6 +2017,9 @@ if __name__ == "__main__":
 
 	drone.startup()											# Connects to drone and starts subprocesses
 	drone.reset()											# Always good, at start
+	
+#	contadorDeAmostras = navOld = navAgr = 0;# Pode Apagar. So usei para verificar a frequencia de amostragem dos sensores do drone.
+#	tempoOld = tempoAgr = 0
 
 	while drone.getBattery()[0] == -1:	time.sleep(0.1)		# Waits until the drone has done its reset
 	time.sleep(0.5)											# Give it some time to fully awake
@@ -2061,6 +2064,18 @@ if __name__ == "__main__":
 #			print(drone.NavData["demo"][2][1]);
 #			print(drone.NavData["demo"][2][2]);
 #			time.sleep(1);#Delay para enxergarmos o dado na tela.
+			
+#			navAgr = drone.NavData["demo"][2][0]
+#			tempoAgr = time.time()
+#			
+#			if navOld != navAgr:
+#				contadorDeAmostras += 1
+#				print(1/(tempoAgr-tempoOld))
+#			# else:
+#				# print('drone.NavData["demo"][2][0]' + str(drone.NavData["demo"][2][0]))
+#				
+#			navOld = navAgr
+#			tempoOld = tempoAgr
 
 
 	finally:
