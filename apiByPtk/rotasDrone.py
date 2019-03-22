@@ -24,6 +24,8 @@ import threading, select, socket, time, tempfile, multiprocessing, struct, os, s
 import _thread, signal, subprocess
 import time, math
 
+
+
 ENCODING = "ascii"
 
 if os.name == 'posix':	import termios, fcntl	# for getKey(), ToDo: Reprogram for Windows
@@ -46,7 +48,7 @@ class Drone(object):
 		self.__Version = 		"2.1.3"
 		self.__lock = 			threading.Lock()	# To prevent semaphores
 		self.__startTime = 		time.time()
-		self.__speed = 			0.8					# Default drone moving speed in percent.
+		self.__speed = 			0.2					# Default drone moving speed in percent.
 		self.showCommands = 	False				# Shows all sent commands (but not the keepalives)
 		self.debug = 			False				# Shows some additional debug information
 		self.valueCorrection = 	False
@@ -143,7 +145,7 @@ class Drone(object):
 		# There is a third process called "self.__vDecodeProcess" for decoding video, initiated and started around line 880
 
 		# Final settings
-		self.useDemoMode(True) 		# This entry is necessary for the drone's firmware, otherwise the NavData contains just header and footer
+		self.useDemoMode(False) 		# This entry is necessary for the drone's firmware, otherwise the NavData contains just header and footer
 		self.setConfig("custom:session_id","-all")
 		self.getNDpackage(["demo"])
 
@@ -602,6 +604,7 @@ class Drone(object):
 		except:	do = True
 		if do:	self.setMConfig("video:video_channel","1")
 		else:	self.setMConfig("video:video_channel","0")
+		
 
 ### Misc commands
 	def reset(self):
@@ -1902,6 +1905,7 @@ def watchdogND(parentPID):
 
 def mainloopND(DroneIP,NavDataPort,parent_pipe,parentPID):
 	global commitsuicideND
+	global meuNavData
 	something2send, MinimalPacketLength, timetag =	False, 30, 0
 	packetlist =		["demo","time","raw_measures","phys_measures","gyros_offsets","euler_angles","references","trims","rc_references","pwm","altitude","vision_raw","vision_of","vision","vision_perf","trackers_send","vision_detect","watchdog","adc_data_frame","video_stream","games","pressure_raw","magneto","wind_speed","kalman_pressure","hdvideo_stream","wifi","zimmu_3000","chksum","state"]
 	choice =			[False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,True]
@@ -1978,7 +1982,7 @@ def mainloopND(DroneIP,NavDataPort,parent_pipe,parentPID):
 			if ip == navdata_pipe:
 				try:
 					netHeartbeat.cancel()									# Connection is alive, Network-Heartbeat not necessary for a moment
-					Packet = 		navdata_pipe.recv(65535)				# Receiving raw NavData-Package
+					Packet = 	navdata_pipe.recv(65535)				# Receiving raw NavData Package
 					netHeartbeat = 	threading.Timer(2.1,reconnect,[navdata_pipe,commitsuicideND,DroneIP,NavDataPort])
 					netHeartbeat.start()									# Network-Heartbeat is set here, because the drone keeps on sending NavData (vid, etc you have to switch on)
 					timestamp =		timetag									# Setting up decoding-time calculation
@@ -1987,13 +1991,17 @@ def mainloopND(DroneIP,NavDataPort,parent_pipe,parentPID):
 						try:		lastdecodedNavData=decodedNavData
 						except:		lastdecodedNavData={}
 					decodedNavData = getNavdata(Packet,choice)
+					
+					meuNavData = getNavdata(Packet, [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0])# "1" em cada pacote que eu quero pegar. O 28 precisa ser zero, senao da erro.
+					
+					
 					state = decodedNavData["state"]
 					# If there is an abnormal small NavPacket, the last NavPacket will be sent out with an error-tag
 					NoNavData = False
 					if len(Packet)<MinimalPacketLength and overallchoice:	decodedNavData, NoNavData = lastdecodedNavData, True
 					dectime = time.time()-timetag
 					# Sends all the data to the mainprocess
-					parent_pipe.send((decodedNavData, state[0:32], state[32], timestamp, dectime, NoNavData))
+					parent_pipe.send((meuNavData, state[0:32], state[32], timestamp, dectime, NoNavData))# alterado para passar todas as tags
 				except IOError:	pass
 	suicideND = True
 	netHeartbeat.cancel()
@@ -2024,8 +2032,8 @@ def frenteTras(objetoDrone):
 
 	
 	
-def moveXY(self, X, Y):
-	self.move(self.__checkSpeedValue(X), self.__checkSpeedValue(Y),0.0,0.0)
+def moveXYZturn(self, X, Y, Z=0, turn=0):
+	self.move(self.__checkSpeedValue(X), self.__checkSpeedValue(Y), self.__checkSpeedValue(Z), self.__checkSpeedValue(3*turn))
 	
 # Esta funcao executara uma trajetoria senoidal em malha aberta, ou seja, nao compensara 
 # erros no trajeto.
@@ -2084,7 +2092,7 @@ def senoSemRotacao(objetoDrone):
 		
 	while distanciaEixoX < distanciaTotalPercorrer:
 	
-		moveXY(droneLocal.speed*math.cos(distanciaAngularPercorrida), droneLocal.speed)
+		moveXYZturn(droneLocal.speed*math.cos(distanciaAngularPercorrida), droneLocal.speed)
 		
 		time.sleep(passoTemporal);# aguardamos 1 segundo para o drone andar um pouco na nova direcao.
 		
@@ -2105,16 +2113,32 @@ def trianguloComRotacao(objetoDrone):
 	time.sleep(1*passoTemporal)
 	
 #====Trajetoria triangular======================================================
+	print("parte1.1")
 	droneLocal.turnAngle(-45,1)
+	print("parte1.2")
+	time.sleep(1*passoTemporal)
+	print("parte1.3")
+	droneLocal.moveForward();# Andando para frente.
+	print("parte1.4")
 	time.sleep(2*passoTemporal)
+	print("parte1.5")
 	
+	print("parte2")
 	droneLocal.turnAngle(90,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.moveForward();# Andando para frente.
 	time.sleep(4*passoTemporal)# A descida da onda triangular dura 2 vezes mais que os outros trechos!
 	
+	print("parte3")
 	droneLocal.turnAngle(-90,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.moveForward();# Andando para frente.
 	time.sleep(2*passoTemporal)
 	
+	print("parte4")
 	droneLocal.turnAngle(45,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.moveForward();# Andando para frente.
 	time.sleep(1*passoTemporal)
 #====Fim da trajetoria triangular===============================================
 
@@ -2133,11 +2157,15 @@ def trianguloComRotacaoParando(objetoDrone):
 	
 #====Trajetoria triangular======================================================
 	droneLocal.turnAngle(-45,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.moveForward();# Andando para frente.
 	time.sleep(2*passoTemporal)
 	droneLocal.hover()
 	time.sleep(1*passoTemporal)
 	
 	droneLocal.turnAngle(90,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.moveForward();# Andando para frente.
 	time.sleep(4)*passoTemporal# A descida da onda triangular dura 2 vezes mais que os outros trechos!
 	droneLocal.hover()
 	time.sleep(1*passoTemporal)
@@ -2148,6 +2176,8 @@ def trianguloComRotacaoParando(objetoDrone):
 	time.sleep(1*passoTemporal)
 	
 	droneLocal.turnAngle(45,1)
+	time.sleep(1*passoTemporal)
+	droneLocal.moveForward();# Andando para frente.
 	time.sleep(1*passoTemporal)
 	droneLocal.hover()
 	time.sleep(1*passoTemporal)
@@ -2161,13 +2191,13 @@ def trainguloSemRotacao(objetoDrone):
 	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
 	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
 	
-	moveXY(-droneLocal.speed, droneLocal.speed);
+	moveXYZturn(-droneLocal.speed, droneLocal.speed);
 	time.sleep(2*passoTemporal)
 	
-	moveXY(droneLocal.speed, droneLocal.speed)
+	moveXYZturn(droneLocal.speed, droneLocal.speed)
 	time.sleep(4*passoTemporal)
 	
-	moveXY(-droneLocal.speed, droneLocal.speed)
+	moveXYZturn(-droneLocal.speed, droneLocal.speed)
 	time.sleep(2*passoTemporal)
 	
 	droneLocal.land();
@@ -2180,6 +2210,8 @@ if __name__ == "__main__":
 ### Here you can write your first test-codes and play around with them
 ###
 	import time
+	
+	# global offsetND;# Tornando esta variavel global. Se nao entender, dá ctrf + f nela
 
 	drone = Drone()								# Start using drone
 	#drone.#printBlue("Battery: ")
@@ -2223,17 +2255,23 @@ if __name__ == "__main__":
 			elif key == "z":	drone.land()
 			elif key == "p":	drone.takeoff()
 			elif key == "t":	drone.thrust(50,50,50,50)
-			elif key == "b":	senoComRotacao(drone)
+			elif key == "b":	trianguloComRotacao(drone)
 			elif key == "c":	frenteTras(drone)
 			elif key == "h":	stop = True
 
-#			#Checa variacao das medicoes da propria IMU do drone.
+#			# Checa variacao das medicoes da propria IMU do drone.
 #			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
 #			print(drone.NavData["demo"][4]);
 #			print(drone.NavData["demo"][2][0]);
 #			print(drone.NavData["demo"][2][1]);
 #			print(drone.NavData["demo"][2][2]);
-#			time.sleep(1);#Delay para enxergarmos o dado na tela.
+#			# print(drone.NavData["raw_measures"][0][0]);
+#			# print(decode_ID1(packet[offsetND:]));
+#			time.sleep(1);# Delay para enxergarmos o dado na tela.
+
+
+#			print(drone.NavData, "\n\n\n\n\n")
+#			time.sleep(1)
 			
 #			navAgr = drone.NavData["demo"][2][0]
 #			tempoAgr = time.time()
