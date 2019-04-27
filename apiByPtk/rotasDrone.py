@@ -134,7 +134,7 @@ class Drone(object):
 		self.__VidPipePath = tempfile.gettempdir()+"/dronevid-"+str(threading.enumerate()[0])[-12:-2]+"-"+str(time.time())[-7:].replace(".","")+".h264"
 		self.__net_pipes = []
 		self.__NavData_pipe, navdataChild_pipe 		  = multiprocessing.Pipe()
-		self.__Video_pipe,   videoChild_pipe          = multiprocessing.Pipe()
+		self.__Video_pipe,   videoChild_pipe		  = multiprocessing.Pipe()
 		self.__vdecode_pipe, self.__vdecodeChild_pipe = multiprocessing.Pipe()
 
 		self.__NavDataProcess = multiprocessing.Process( target=mainloopND, args=(self.DroneIP,self.NavDataPort,navdataChild_pipe,os.getpid()))
@@ -415,12 +415,12 @@ class Drone(object):
 	def turnLeft(self,*args):
 		try:	speed=args[0]
 		except:	speed=self.__speed
-		self.move(0.0,0.0,0.0,-self.__checkSpeedValue(speed))
+		self.move(0.0,0.0,0.0,-self.__checkSpeedValue(5*speed))
 
 	def turnRight(self,*args):
 		try:	speed=args[0]
 		except:	speed=self.__speed
-		self.move(0.0,0.0,0.0, self.__checkSpeedValue(speed))
+		self.move(0.0,0.0,0.0, self.__checkSpeedValue(5*speed))
 
 	# Lets the drone rotate defined angle
 	# BUG: does not work with 180deg. turns
@@ -441,7 +441,7 @@ class Drone(object):
 			if self.__State[10]:	accurateness = 0.1		# Destination angle can differ +/- this value in demo-mode
 		stop =		False
 		counter =	0
-		direction =	0										# -1 = left | 1 = right     To prevent endless loops (happends sometimes, whyever)
+		direction =	0										# -1 = left | 1 = right	 To prevent endless loops (happends sometimes, whyever)
 		while not stop and counter<=5:
 			ndc = self.__NavDataCount						# wait for the next NavData-package
 			while ndc == self.__NavDataCount:		time.sleep(0.001)
@@ -501,7 +501,7 @@ class Drone(object):
 	###### Video & Marker commands
 	# This makes the drone fly around and follow 2D tags which the camera is able to detect.
 	def aflight(self, flag):
-	    self.at("AFLIGHT", [flag])	#Integer: 1: start flight, 0: stop flight
+		self.at("AFLIGHT", [flag])	#Integer: 1: start flight, 0: stop flight
 
 	def slowVideo(self, *args):
 		try:	do = args[0]
@@ -689,7 +689,7 @@ class Drone(object):
 #############################=-
 ###  Convenient Commands  ###=-
 #############################=-
-#    Just add water
+#	Just add water
 	# Checks the battery-status
 	def getBattery(self):
 		batStatus =	"OK"
@@ -1063,7 +1063,7 @@ def vCapture(VidPipePath, parent_pipe):
 	vCruns = False
 	cv2.destroyAllWindows()
 	capture.release()
-	#if debugV:	#print "vCapture-Thread :    committed suicide"
+	#if debugV:	#print "vCapture-Thread :	committed suicide"
 
 ### Process to decode the videostream in the FIFO-Pipe, stored there from main-loop.
 # Storing and decoding must not be processed in the same process, thats why decoding is external.
@@ -1086,15 +1086,15 @@ def vDecode(VidPipePath, parent_pipe, parentPID):
 		elif cmd == "hide":			showVid =		False
 		elif cmd == "debug":
 			debugV = True
-			#print "vDecode-Process :    running"
-			#if vCruns:	#print "vCapture-Thread :    running"
+			#print "vDecode-Process :	running"
+			#if vCruns:	#print "vCapture-Thread :	running"
 		elif cmd == "undebug":		debugV =		False
 		elif cmd == "showCommands":	showCommands =	True
 		elif cmd == "hideCommands":	showCommands =	False
 	Thread_vCapture.join()
 	parent_pipe.send(("suicided",0,0,0))
 	time.sleep(0.1)
-	#if debugV:	#print "vDecode-Process :    committed suicide"
+	#if debugV:	#print "vDecode-Process :	committed suicide"
 
 #####################################################
 def VideoReceiveWatchdog(parent_pipe,name, debugV):
@@ -1161,7 +1161,7 @@ def mainloopV(DroneIP, VideoPort, VidPipePath, parent_pipe, parentPID):
 					parent_pipe.send("hideCommands")
 				elif cmd == "debug":
 					debugV = True
-					#print "Video-Process :      running"
+					#print "Video-Process :	  running"
 					parent_pipe.send("debug")
 				elif cmd == "undebug":
 					debugV = False
@@ -1226,7 +1226,7 @@ def mainloopV(DroneIP, VideoPort, VidPipePath, parent_pipe, parentPID):
 
 			### Grabs the Videostream and store it in a fifo-pipe for decoding.
 			# The decoder has to guess the videostream-format which takes around 266 video-frames.
-			#    So the stream is preprocessed, I-Frames will cut out while initiation and a flood of copies
+			#	So the stream is preprocessed, I-Frames will cut out while initiation and a flood of copies
 			#	 will be send to the decoder, till the proper decoder for the videostream is found.
 			# In case of a slow or midspeed-video, only a single or a few copied I-frames are sent to the decoder.
 			if ip == vstream_pipe:
@@ -1324,7 +1324,7 @@ def mainloopV(DroneIP, VideoPort, VidPipePath, parent_pipe, parentPID):
 	except:	pass
 	try:	os.remove(VidPipePath)
 	except:	pass
-	#if debugV:	#print "Video-Process :      committed suicide"
+	#if debugV:	#print "Video-Process :	  committed suicide"
 	try:	vstream_pipe.close()
 	except:	pass
 
@@ -1346,7 +1346,7 @@ def decode_Header(data):
 #Bit 16-23: USER_EL, TIMER_ELAPSED, MAGNETO_NEEDS_CALIB, ANGLES_OUT_OF_RANGE, WIND_MASK, ULTRASOUND_MASK, CUTOUT_MASK, PIC_VERSION_MASK
 #Bit 24-31: ATCODEC_THREAD_ON, NAVDATA_THREAD_ON, VIDEO_THREAD_ON, ACQ_THREAD_ON, CTRL_WATCHDOG_MASK, ADC_WATCHDOG_MASK, COM_WATCHDOG_MASK, EMERGENCY_MASK
 	stateBit = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-	stateBit[ 0] = data[1]    &1	#  0: FLY MASK :					(0) ardrone is landed, (1) ardrone is flying
+	stateBit[ 0] = data[1]	&1	#  0: FLY MASK :					(0) ardrone is landed, (1) ardrone is flying
 	stateBit[ 1] = data[1]>> 1&1	#  1: VIDEO MASK :					(0) video disable, (1) video enable
 	stateBit[ 2] = data[1]>> 2&1	#  2: VISION MASK :					(0) vision disable, (1) vision enable
 	stateBit[ 3] = data[1]>> 3&1	#  3: CONTROL ALGO :				(0) euler angles control, (1) angular speed control
@@ -1458,10 +1458,10 @@ def decode_ID3(packet):  		#NAVDATA_PHYS_MEASURES_TAG
 	#if dataset[1] != 46:		#print "*** Warning : navdata-phys_measures-Options-Package (ID=3) has the wrong size. ("+str(dataset[1])+")"
 	phys_measures = [0,0,[0,0,0],[0,0,0],0,0,0]
 	phys_measures[0] = dataset[2]	#float32   accs_temp
-	phys_measures[1] = dataset[3]	#uint16    gyro_temp
-	phys_measures[4] = dataset[10]	#uint32    alim3V3              3.3volt alim [LSB]
-	phys_measures[5] = dataset[11]	#uint32    vrefEpson            ref volt Epson gyro [LSB]
-	phys_measures[6] = dataset[12]	#uint32    vrefIDG              ref volt IDG gyro [LSB]
+	phys_measures[1] = dataset[3]	#uint16	gyro_temp
+	phys_measures[4] = dataset[10]	#uint32	alim3V3			  3.3volt alim [LSB]
+	phys_measures[5] = dataset[11]	#uint32	vrefEpson			ref volt Epson gyro [LSB]
+	phys_measures[6] = dataset[12]	#uint32	vrefIDG			  ref volt IDG gyro [LSB]
 	dataset = struct.unpack_from(">HHfHffffffIII", packet, 0) 	#switch from little to big-endian
 	for i in range(0,3,1):	phys_measures[2][i] = dataset[4+i]	#float32   phys_accs[xyz]
 	for i in range(0,3,1):	phys_measures[3][i] = dataset[7+i]	#float32   phys_gyros[xyz]
@@ -1503,7 +1503,7 @@ def decode_ID6(packet):			#NAVDATA_REFERENCES_TAG
 	references[4][1] = dataset[13]		#phi_mod		Phi_modele [radian]				(float)
 	references[5][0] = dataset[14]		#k_v_x											(float)
 	references[5][1] = dataset[15]		#k_v_y											(float)
-	references[6]    = dataset[16]		#k_mode											(uint32)
+	references[6]	= dataset[16]		#k_mode											(uint32)
 	references[7][0] = dataset[17]		#ui_time										(float)
 	references[7][1] = dataset[18]		#ui_theta										(float)
 	references[7][2] = dataset[19]		#ui_phi											(float)
@@ -1539,18 +1539,18 @@ def decode_ID9(packet):			#NAVDATA_PWM_TAG
 	dataset = struct.unpack_from("HHBBBBBBBBffffiiifiiifHHHHff", packet, 0)
 	#if dataset[1] != 76 and dataset[1] != 92:   #92 since firmware 2.4.8 ?
 		#print "*** Warning : navdata-navdata_pwm-Options-Package (ID=9) has the wrong size. ("+str(dataset[1])+")"
-		#print "Soll: 76     Ist:",dataset[1]
+		#print "Soll: 76	 Ist:",dataset[1]
 	pwm = [[0,0,0,0],[0,0,0,0],0.0,0.0,0.0,0.0,[0,0,0],0.0,[0,0,0,0.0],[0,0,0,0],0.0,0.0]
 	for i in range(0,4,1):	pwm[0][i] = dataset[2+i]	#  motor1/2/3/4		[Pulse-width mod]	(uint8)
 	for i in range(0,4,1):	pwm[1][i] = dataset[6+i]	#  sat_motor1/2/3/4	[Pulse-width mod]	(uint8)
-	pwm[2]    = dataset[10]			# gaz_feed_forward		[Pulse-width mod]	(float)
-	pwm[3]    = dataset[11]			# gaz_altitud			[Pulse-width mod]	(float)
-	pwm[4]    = dataset[12]			# altitude_integral		[mm/s]				(float)
-	pwm[5]    = dataset[13]			# vz_ref				[mm/s]				(float)
+	pwm[2]	= dataset[10]			# gaz_feed_forward		[Pulse-width mod]	(float)
+	pwm[3]	= dataset[11]			# gaz_altitud			[Pulse-width mod]	(float)
+	pwm[4]	= dataset[12]			# altitude_integral		[mm/s]				(float)
+	pwm[5]	= dataset[13]			# vz_ref				[mm/s]				(float)
 	pwm[6][0] = dataset[14]			# u_pitch				[Pulse-width mod]	(int32)
 	pwm[6][1] = dataset[15]			# u_roll				[Pulse-width mod]	(int32)
 	pwm[6][2] = dataset[16]			# u_yaw					[Pulse-width mod]	(int32)
-	pwm[7]    = dataset[17]			# yaw_u_I				[Pulse-width mod]	(float)
+	pwm[7]	= dataset[17]			# yaw_u_I				[Pulse-width mod]	(float)
 	pwm[8][0] = dataset[18]			# u_pitch_planif		[Pulse-width mod]	(int32)
 	pwm[8][1] = dataset[19]			# u_roll_planif			[Pulse-width mod]	(int32)
 	pwm[8][2] = dataset[20]			# u_yaw_planif			[Pulse-width mod]	(int32)
@@ -1621,8 +1621,8 @@ def decode_ID13(packet):		#NAVDATA_VISION_TAG
 		vision[10][i] = dataset[14+i]	#  velocities[xyz]						(float)
 	for i in range (0,3,1):
 		vision[11][i] = dataset[17+i]	#  delta_phi/theta/psi					(float)
-	vision[12] =    dataset[20]			# gold_defined							(uint32)
-	vision[13] =    dataset[21]			# gold_reset							(uint32)
+	vision[12] =	dataset[20]			# gold_defined							(uint32)
+	vision[13] =	dataset[21]			# gold_reset							(uint32)
 	vision[14][0] = dataset[22]			# gold_x								(float)
 	vision[14][1] = dataset[23]			# gold_y								(float)
 	return(vision)
@@ -1759,8 +1759,8 @@ def decode_ID23(packet):		#NAVDATA_WIND_TAG
 	#if dataset[1] != 56 and dataset[1] != 64:
 		#print "*** Warning : navdata-wind_speed-Package (ID=23) has the wrong size. ("+str(dataset[1])+")"
 	wind_speed = [0.0,0.0,[0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0]]
-	wind_speed[0]    = dataset[2]							# wind_speed 			   					(float)
-	wind_speed[1]    = dataset[3]							# wind_angle								(float)
+	wind_speed[0]	= dataset[2]							# wind_speed 			   					(float)
+	wind_speed[1]	= dataset[3]							# wind_angle								(float)
 	wind_speed[2][0] = dataset[4]							# wind_compensation_theta 					(float)
 	wind_speed[2][1] = dataset[5]							# wind_compensation_phi						(float)
 	for i in range (0,6,1):	wind_speed[3][i]=dataset[6+i]	# state_x[1-6]								(float)
@@ -1945,7 +1945,7 @@ def mainloopND(DroneIP,NavDataPort,parent_pipe,parentPID):
 				# Enables/disables Debug-bit
 				elif cmd == "debug":
 					debug = True
-					#print "NavData-Process :    running"
+					#print "NavData-Process :	running"
 				elif cmd == "undebug":
 					debug = False
 				# Enables/disables Debug-bit
@@ -2005,7 +2005,7 @@ def mainloopND(DroneIP,NavDataPort,parent_pipe,parentPID):
 				except IOError:	pass
 	suicideND = True
 	netHeartbeat.cancel()
-	#if debug:	#print "NavData-Process :    committed suicide"
+	#if debug:	#print "NavData-Process :	committed suicide"
 	# TestMe
 	try:	navdata_pipe.close()
 	except:	pass
@@ -2032,8 +2032,15 @@ def frenteTras(objetoDrone):
 
 	
 	
-def moveXYZturn(self, X, Y, Z=0, turn=0):
-	self.move(self.__checkSpeedValue(X), self.__checkSpeedValue(Y), self.__checkSpeedValue(Z), self.__checkSpeedValue(3*turn))
+def moveXYZturn(drone_, X=0, Y=0, Z=0, turn=0):
+	drone_.move(X, Y, Z, turn)
+	
+#def viraGirando(drone_, graus):
+#	yawInicial = drone.NavData["demo"][2][2];
+#	if graus >= 0:
+#		drone_.move(drone_, turn=1)
+#	else:
+#		drone_.move(X, Y, Z, turn)
 	
 # Esta funcao executara uma trajetoria senoidal em malha aberta, ou seja, nao compensara 
 # erros no trajeto.
@@ -2102,6 +2109,95 @@ def senoSemRotacao(objetoDrone):
 		
 		
 	droneLocal.land();# Pousamos o drone ao final.
+	
+def senoAltitude(objetoDrone):
+
+	droneLocal = objetoDrone;# Para nao termos que instanciar a classe novamente.
+	
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	distanciaAngularPercorrida = 0;# A distancia convertida em graus que o drone percorreu.
+	distanciaTotalPercorrer = 1.5;# O tamanho, em metros, do trajeto que o drone executara no eixo X.
+	distanciaEixoX = 0;# Quantos metros o drone andou na direcao do Eixo X.
+
+	droneLocal.moveForward();# O drone vai andando para frente enquanto variamos apenas o angulo com o exio X.
+		
+	while distanciaEixoX < distanciaTotalPercorrer:
+	
+		moveXYZturn(objetoDrone, 0, droneLocal.speed, 3*droneLocal.speed*math.cos(distanciaAngularPercorrida))
+		
+		time.sleep(passoTemporal);# aguardamos 1 segundo para o drone andar um pouco na nova direcao.
+		
+		distanciaEixoX += droneLocal.speed*passoTemporal;# Quanto andamos na direcao eixo X.
+		distanciaAngularPercorrida = distanciaEixoX*2.0*math.pi/distanciaTotalPercorrer;# Convertemos a distancia percorrida em radianos em funcao da distancia total a percorrer.
+		
+		print("\n\ndistanciaAngularPercorrida: ", distanciaAngularPercorrida)
+		print("distanciaEixoX: ", distanciaEixoX)
+		print("Velocidade Vertical: ", 3*droneLocal.speed*math.cos(distanciaAngularPercorrida), "\n\n")
+		
+				
+		
+		
+	while 1: 
+		droneLocal.land();# Pousamos o drone ao final.
+		print("Acabou")
+		time.sleep(1)
+		
+def quadrado(objetoDrone):
+
+	droneLocal = objetoDrone;# Para nao termos que instanciar a classe novamente.
+	
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	arestasPercorridas = 0;# Quantos lados da rota (quadrado) o drone ja percorreu
+	loops = 2;# Quantas vezes os drone deve realizar o quadrado.
+	
+	while arestasPercorridas < 4*loops:
+		droneLocal.moveForward()
+		time.sleep(1)
+		droneLocal.turnAngle(90,1)
+		time.sleep(0.5)
+		
+	while 1: 
+		droneLocal.land();# Pousamos o drone ao final.
+		print("Acabou")
+		time.sleep(1)
+		
+def retasEmVelocidade(objetoDrone):
+
+	droneLocal = objetoDrone;# Para nao termos que instanciar a classe novamente.
+	
+	# Evita que muitos comandos cheguem juntos ao drone e causem erro no processamento.
+	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
+	
+	retasPercorridas = 0;# Quantos lados da rota (quadrado) o drone ja percorreu
+	loops = 2;# Quantas vezes os drone deve realizar o quadrado.
+	
+	while retasPercorridas < 4*loops:
+		droneLocal.moveForward(1.0)
+		time.sleep(1)
+		droneLocal.moveForward(0.2)
+		time.sleep(1)
+		droneLocal.moveForward(0.5)
+		time.sleep(1)
+		droneLocal.hover()
+		time.sleep(0.5)
+		
+		droneLocal.moveBackward(1.0)
+		time.sleep(1)
+		droneLocal.moveBackward(0.2)
+		time.sleep(1)
+		droneLocal.moveBackward(0.5)
+		time.sleep(1)
+		droneLocal.hover()
+		time.sleep(0.5)
+		
+	while 1: 
+		droneLocal.land();# Pousamos o drone ao final.
+		print("Acabou")
+		time.sleep(1)
 	
 def trianguloComRotacao(objetoDrone):
 
@@ -2230,6 +2326,11 @@ if __name__ == "__main__":
 	try:
 		stop = False
 		while not stop:
+#			drone.takeoff()
+#			time.sleep(15)
+#			drone.mtrim()
+#			time.sleep(6)
+#			drone.land()
 			key = drone.getKey()
 			if key == " ":
 				if drone.NavData["demo"][0][2] and not drone.NavData["demo"][0][3]:	drone.takeoff()
@@ -2251,20 +2352,21 @@ if __name__ == "__main__":
 			elif key == "2":	drone.moveDown()
 			elif key == "*":	drone.doggyHop()
 			elif key == "+":	drone.doggyNod()
-			elif key == "-":	drone.doggyWag()
 			elif key == "z":	drone.land()
 			elif key == "p":	drone.takeoff()
 			elif key == "t":	drone.thrust(50,50,50,50)
-			elif key == "b":	trianguloComRotacao(drone)
-			elif key == "c":	frenteTras(drone)
+			elif key == "b":	senoAltitude(drone)
+			elif key == "c":	quadrado(drone)
+			elif key == "-":	retasEmVelocidade(drone)
+			elif key == ",":	drone.mtrim()
 			elif key == "h":	stop = True
 
 #			# Checa variacao das medicoes da propria IMU do drone.
-#			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
-#			print(drone.NavData["demo"][4]);
+#			for i in range(1, 3): print("\n");#Imprime 25 linhas para limpar a tela.
+#			#print(drone.NavData["demo"][4]);
 #			print(drone.NavData["demo"][2][0]);
 #			print(drone.NavData["demo"][2][1]);
-#			print(drone.NavData["demo"][2][2]);
+#			print(drone.NavData["demo"][2][2]);# YAW
 #			# print(drone.NavData["raw_measures"][0][0]);
 #			# print(decode_ID1(packet[offsetND:]));
 #			time.sleep(1);# Delay para enxergarmos o dado na tela.
