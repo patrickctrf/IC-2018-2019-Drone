@@ -2118,7 +2118,7 @@ def senoAltitude(objetoDrone):
 	passoTemporal = 1;# Quantos segundos o drone permanecera andando na mesma direcao.
 	
 	distanciaAngularPercorrida = 0;# A distancia convertida em graus que o drone percorreu.
-	distanciaTotalPercorrer = 1.5;# O tamanho, em metros, do trajeto que o drone executara no eixo X.
+	distanciaTotalPercorrer = 1.0;# O tamanho, em metros, do trajeto que o drone executara no eixo X.
 	distanciaEixoX = 0;# Quantos metros o drone andou na direcao do Eixo X.
 
 	droneLocal.moveForward();# O drone vai andando para frente enquanto variamos apenas o angulo com o exio X.
@@ -2160,6 +2160,8 @@ def quadrado(objetoDrone):
 		droneLocal.turnAngle(90,1)
 		time.sleep(0.5)
 		
+		arestasPercorridas += arestasPercorridas + 1
+		
 	while 1: 
 		droneLocal.land();# Pousamos o drone ao final.
 		print("Acabou")
@@ -2175,7 +2177,7 @@ def retasEmVelocidade(objetoDrone):
 	retasPercorridas = 0;# Quantos lados da rota (quadrado) o drone ja percorreu
 	loops = 2;# Quantas vezes os drone deve realizar o quadrado.
 	
-	while retasPercorridas < 4*loops:
+	while retasPercorridas < loops:
 		droneLocal.moveForward(1.0)
 		time.sleep(1)
 		droneLocal.moveForward(0.2)
@@ -2193,6 +2195,8 @@ def retasEmVelocidade(objetoDrone):
 		time.sleep(1)
 		droneLocal.hover()
 		time.sleep(0.5)
+		
+		retasPercorridas += retasPercorridas + 1 
 		
 	while 1: 
 		droneLocal.land();# Pousamos o drone ao final.
