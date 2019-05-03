@@ -2301,6 +2301,59 @@ def trainguloSemRotacao(objetoDrone):
 	time.sleep(2*passoTemporal)
 	
 	droneLocal.land();
+	
+	
+def roscoreInitThread():
+	os.system("roscore")
+	
+def rosrunImuUm7Thread():
+	os.system("rosrun um7 um7_driver _port:=/dev/ttyUSB0")
+	
+def acelerometroGiroscopioImuThread():
+	os.system("echo " " > rosAcelerometroGiroscopio.txt")
+	os.system("rostopic echo /imu/data >> rosAcelerometroGiroscopio.txt")
+	
+def magnetometroImuThread():
+	os.system("echo " " > rosMagnetometro.txt")
+	os.system("rostopic echo /imu/mag >> rosMagnetometro.txt")
+	
+def sensoresDroneThread(droneLocal):
+	
+	print("INICIOU a thread")
+	
+	acelerometro_drone = open("acelerometro_drone.txt", "w")
+	giroscopio_drone = open("giroscopio_drone.txt", "w")
+	magnetometro_drone = open("magnetometro_drone.txt", "w")
+	pwm = open("pwm.txt", "w")
+	
+	oldTime = 0;
+	
+	while(1):
+		
+		# Evita repetir leituras.
+		if oldTime != droneLocal.NavData["time"][0]:
+			acelerometro_drone.write(str(droneLocal.NavData["raw_measures"][0][0]) + "\t" + str(droneLocal.NavData["raw_measures"][0][1]) + "\t" + str(droneLocal.NavData["raw_measures"][0][2]) + "\t" + str(droneLocal.NavData["time"][0]) + "\n")
+			
+			
+			giroscopio_drone.write(str(droneLocal.NavData["raw_measures"][1][0]) + "\t" + str(droneLocal.NavData["raw_measures"][1][1]) + "\t" + str(droneLocal.NavData["raw_measures"][1][2]) + "\t" + str(droneLocal.NavData["time"][0]) + "\n")
+			
+			
+			magnetometro_drone.write(str(droneLocal.NavData["magneto"][1][0]) + "\t" + str(droneLocal.NavData["magneto"][1][1]) + "\t" + str(droneLocal.NavData["magneto"][1][2]) + "\t" + str(droneLocal.NavData["time"][0]) + "\n")
+			
+			
+			pwm.write(str(droneLocal.NavData["pwm"][0][0]) + "\t" + str(droneLocal.NavData["pwm"][0][1]) + "\t" + str(droneLocal.NavData["pwm"][0][2]) + "\t" + str(droneLocal.NavData["pwm"][0][3]) + "\t" + str(droneLocal.NavData["time"][0]) + "\n")
+
+			pwm.flush()
+			acelerometro_drone.flush()
+			magnetometro_drone.flush()
+			giroscopio_drone.flush()
+			
+			oldTime = droneLocal.NavData["time"][0];
+		
+	acelerometro_drone.close()
+	giroscopio_drone.close()
+	magnetometro_drone.close()
+	pwm.close()
 
 ##################################################################################################
 ###### Playground																			######
@@ -2318,6 +2371,13 @@ if __name__ == "__main__":
 
 	drone.startup()											# Connects to drone and starts subprocesses
 	drone.reset()											# Always good, at start
+	
+	t1 = threading.Thread(target=sensoresDroneThread ,args=(drone,))
+	t2 = threading.Thread(target=roscoreInitThread)
+	t3 = threading.Thread(target=rosrunImuUm7Thread)
+	t4 = threading.Thread(target=acelerometroGiroscopioImuThread)
+	t5 = threading.Thread(target=magnetometroImuThread)
+	
 	
 #	contadorDeAmostras = navOld = navAgr = 0;# Pode Apagar. So usei para verificar a frequencia de amostragem dos sensores do drone.
 #	tempoOld = tempoAgr = 0
@@ -2357,21 +2417,37 @@ if __name__ == "__main__":
 			elif key == "*":	drone.doggyHop()
 			elif key == "+":	drone.doggyNod()
 			elif key == "z":	drone.land()
-			elif key == "p":	drone.takeoff()
-			elif key == "t":	drone.thrust(50,50,50,50)
+			elif key == "p":	
+				drone.takeoff()
+				t2.start()
+				time.sleep(1)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				t3.start()
+				time.sleep(1)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				t4.start()
+				t5.start()
+				t1.start()
+			elif key == "t":	
+				drone.thrust(50,50,50,50)
+				t2.start()
+				time.sleep(1)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				t3.start()
+				time.sleep(1)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				t4.start()
+				t5.start()
+				t1.start()
 			elif key == "b":	senoAltitude(drone)
 			elif key == "c":	quadrado(drone)
 			elif key == "-":	retasEmVelocidade(drone)
 			elif key == ",":	drone.mtrim()
 			elif key == "h":	stop = True
 
-#			# Checa variacao das medicoes da propria IMU do drone.
-#			for i in range(1, 3): print("\n");#Imprime 25 linhas para limpar a tela.
+			# Checa variacao das medicoes da propria IMU do drone.
+#			for i in range(1, 3): print("\n");#Imprime 3 linhas para limpar a tela.
 #			#print(drone.NavData["demo"][4]);
-#			print(drone.NavData["demo"][2][0]);
-#			print(drone.NavData["demo"][2][1]);
-#			print(drone.NavData["demo"][2][2]);# YAW
-#			# print(drone.NavData["raw_measures"][0][0]);
+#			#print(drone.NavData["demo"][2][0]);
+#			#print(drone.NavData["demo"][2][1]);
+#			#print(drone.NavData["demo"][2][2]);# YAW
+#			print(0x0000FFFF & (drone.NavData["raw_measures"][0][0]));
 #			# print(decode_ID1(packet[offsetND:]));
 #			time.sleep(1);# Delay para enxergarmos o dado na tela.
 
