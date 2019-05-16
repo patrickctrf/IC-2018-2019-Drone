@@ -7,7 +7,7 @@ drone = ps_drone.Drone() #Initials the PS-Drone-API
 drone.startup() #Connects to the drone and starts subprocesses
 drone.reset()
 while (drone.getBattery()[0]==-1): time.sleep(0.1) #Reset completed ?
-print "Battery:"+str(drone.getBattery()[0])+"% "+str(drone.getBattery()[1])
+print("Battery:"+str(drone.getBattery()[0])+"% "+str(drone.getBattery()[1]))
 drone.useDemoMode(True) #15 basic datasets per second
 drone.getNDpackage(["demo","vision detect"]) #Packets to decoded
 time.sleep(0.5) #Gives time to fully awake
@@ -19,7 +19,7 @@ drone.frontCam() #Choose front view
 while CDC==drone.ConfigDataCount: time.sleep(0.001) #Wait until it is done
 drone.startVideo() #Start video-function
 drone.showVideo() #Display the video
-print "<space> to toggle front- and groundcamera, 'z' key to stop"
+print("<space> to toggle front- and groundcamera, 'z' key to stop")
 IMC = drone.VideoImageCount #Number of encoded videoframes
 stop = False
 ground = False #To toggle front- and groundcamera
@@ -30,7 +30,7 @@ while stop != True: #Roda ate mandar parar
 	key = drone.getKey()
 	
 	video = drone.VideoImage
-	print video.shape
+	print(video.shape)
 	
 	video = cv2.cvtColor(video, cv2.COLOR_BGR2GRAY)
 	cv2.imshow("Frame", video)

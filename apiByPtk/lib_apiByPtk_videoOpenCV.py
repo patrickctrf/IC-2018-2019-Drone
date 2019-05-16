@@ -6,6 +6,7 @@ while running:
     running, frame = cam.read()
     if running:
         cv2.imshow('frame', frame)
+        print(frame.shape)
         if cv2.waitKey(1) & 0xFF == 27: 
             # escape key pressed
             running = False
