@@ -2312,18 +2312,48 @@ def trainguloSemRotacao(objetoDrone):
 	
 	droneLocal.land();
 	
-	
+
+def imgCameraDrone():
+
+	cam = cv2.VideoCapture('tcp://192.168.1.1:5555')
+	running = True
+	while running:
+		# get current frame of video
+		running, frame = cam.read()
+		if running:
+			cv2.imshow('frame', frame)
+			print(frame.shape)
+			
+			byte_matrix = frame
+			print(byte_matrix)
+			print(byte_matrix.shape)
+		
+			output_file = open('CameraDrone/' + str(time.time()), 'wb')
+		
+			np.save(output_file, byte_matrix)
+		
+			output_file.close()
+			
+			if cv2.waitKey(1) & 0xFF == 27:
+				# escape key pressed
+				running = False
+		else:
+			# error reading frame
+			print('error reading video feed')
+	cam.release()
+	cv2.destroyAllWindows()
+
 def imgGlobalShutter():
 	#Variables
-	hCam = ueye.HIDS(0)             #0: first available camera;  1-254: The camera with the specified camera ID
+	hCam = ueye.HIDS(0)			 #0: first available camera;  1-254: The camera with the specified camera ID
 	sInfo = ueye.SENSORINFO()
 	cInfo = ueye.CAMINFO()
 	pcImageMemory = ueye.c_mem_p()
 	MemID = ueye.int()
 	rectAOI = ueye.IS_RECT()
 	pitch = ueye.INT()
-	nBitsPerPixel = ueye.INT(24)    #24: bits per pixel for color mode; take 8 bits per pixel for monochrome
-	channels = 3                    #3: channels for color mode(RGB); take 1 channel for monochrome
+	nBitsPerPixel = ueye.INT(24)	#24: bits per pixel for color mode; take 8 bits per pixel for monochrome
+	channels = 3					#3: channels for color mode(RGB); take 1 channel for monochrome
 	m_nColorMode = ueye.INT()		# Y8/RGB16/RGB24/REG32
 	bytes_per_pixel = int(nBitsPerPixel / 8)
 	#---------------------------------------------------------------------------------------------------------------------------------------
@@ -2418,10 +2448,10 @@ def imgGlobalShutter():
 		# Makes the specified image memory the active memory
 		nRet = ueye.is_SetImageMem(hCam, pcImageMemory, MemID)
 		if nRet != ueye.IS_SUCCESS:
-		    print("is_SetImageMem ERROR")
+			print("is_SetImageMem ERROR")
 		else:
-		    # Set the desired color mode
-		    nRet = ueye.is_SetColorMode(hCam, m_nColorMode)
+			# Set the desired color mode
+			nRet = ueye.is_SetColorMode(hCam, m_nColorMode)
 
 
 
@@ -2460,11 +2490,11 @@ def imgGlobalShutter():
 	#---------------------------------------------------------------------------------------------------------------------------------------
 
 		#...and finally display it
-		cv2.imshow("SimpleLive_Python_uEye_OpenCV", frame)
+#		cv2.imshow("SimpleLive_Python_uEye_OpenCV", frame)
 		
 		byte_matrix = frame
-		print(byte_matrix)
-		print(byte_matrix.shape)
+#		print(byte_matrix)
+#		print(byte_matrix.shape)
 		
 		output_file = open('GlobalShutter/' + str(time.time()), 'wb')
 		
@@ -2473,8 +2503,8 @@ def imgGlobalShutter():
 		output_file.close()
 
 		# Press q if you want to end the loop
-		if cv2.waitKey(1) & 0xFF == ord('q'):
-		    break
+#		if cv2.waitKey(1) & 0xFF == ord('q'):
+#			break
 	#---------------------------------------------------------------------------------------------------------------------------------------
 
 	# Releases an image memory that was allocated using is_AllocImageMem() and removes it from the driver management
@@ -2566,6 +2596,7 @@ if __name__ == "__main__":
 	t4 = threading.Thread(target=acelerometroGiroscopioImuThread)
 	t5 = threading.Thread(target=magnetometroImuThread)
 	t6 = threading.Thread(target=imgGlobalShutter)
+	t7 = threading.Thread(target=imgCameraDrone)
 	
 	
 #	contadorDeAmostras = navOld = navAgr = 0;# Pode Apagar. So usei para verificar a frequencia de amostragem dos sensores do drone.
@@ -2615,6 +2646,7 @@ if __name__ == "__main__":
 				t4.start()
 				t5.start()
 				t6.start()
+				t7.start()
 				t1.start()
 			elif key == "t":	
 				drone.thrust(50,50,50,50)
@@ -2625,6 +2657,7 @@ if __name__ == "__main__":
 				t4.start()
 				t5.start()
 				t6.start()
+				t7.start()
 				t1.start()
 			elif key == "b":	senoAltitude(drone)
 			elif key == "c":	quadrado(drone)
