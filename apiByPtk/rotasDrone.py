@@ -24,8 +24,9 @@ import threading, select, socket, time, tempfile, multiprocessing, struct, os, s
 import _thread, signal, subprocess
 import time, math
 
+import array as arranjo
 from numpy.random import rand
-from array import array
+
 
 from pyueye import ueye
 import numpy as np
@@ -2463,6 +2464,7 @@ def imgGlobalShutter():
 		
 		byte_matrix = frame
 		print(byte_matrix)
+		print(byte_matrix.shape)
 
 		aux = [[[float(0)]*byte_matrix.shape[0]]*byte_matrix.shape[1]*byte_matrix.shape[2]]
 
@@ -2470,8 +2472,8 @@ def imgGlobalShutter():
 
 		print(aux)
 
-		a = array('f', aux)
-		output_file = open('file' + str(time.time()), 'wb')
+		a = arranjo.array('f', aux)
+		output_file = open('GlobalShutter/' + str(time.time()), 'wb')
 		a.tofile(output_file)
 		output_file.close()
 
@@ -2498,7 +2500,7 @@ def roscoreInitThread():
 	os.system("roscore")
 	
 def rosrunImuUm7Thread():
-	os.system("sudo rosrun um7 um7_driver _port:=/dev/ttyUSB0")
+	os.system("rosrun um7 um7_driver _port:=/dev/ttyUSB0")
 	
 def acelerometroGiroscopioImuThread():
 	os.system("echo " " > rosAcelerometroGiroscopio.txt")
@@ -2555,7 +2557,7 @@ if __name__ == "__main__":
 ###
 	import time
 	
-	# global offsetND;# Tornando esta variavel global. Se nao entender, dá ctrf + f nela
+	# global offsetND; # Tornando esta variavel global. Se nao entender, da ctrf + f nela
 
 	drone = Drone()								# Start using drone
 	#drone.#printBlue("Battery: ")
@@ -2612,9 +2614,9 @@ if __name__ == "__main__":
 			elif key == "p":	
 				drone.takeoff()
 				t2.start()
-				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t3.start()
-				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t4.start()
 				t5.start()
 				t6.start()
@@ -2622,9 +2624,9 @@ if __name__ == "__main__":
 			elif key == "t":	
 				drone.thrust(50,50,50,50)
 				t2.start()
-				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t3.start()
-				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t4.start()
 				t5.start()
 				t6.start()
