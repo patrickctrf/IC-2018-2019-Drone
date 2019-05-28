@@ -20,5 +20,3 @@ output_file.close()
 #		for k in range(0, byte_matrix.shape[2]):
 #			f.write(float(byte_matrix[i,j,k]))
 
-
-
