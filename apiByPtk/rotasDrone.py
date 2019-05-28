@@ -2465,16 +2465,11 @@ def imgGlobalShutter():
 		byte_matrix = frame
 		print(byte_matrix)
 		print(byte_matrix.shape)
-
-		aux = [[[float(0)]*byte_matrix.shape[0]]*byte_matrix.shape[1]*byte_matrix.shape[2]]
-
-		aux = byte_matrix.flatten()
-
-		print(aux)
-
-		a = arranjo.array('f', aux)
+		
 		output_file = open('GlobalShutter/' + str(time.time()), 'wb')
-		a.tofile(output_file)
+		
+		np.save(output_file, byte_matrix)
+		
 		output_file.close()
 
 		# Press q if you want to end the loop
