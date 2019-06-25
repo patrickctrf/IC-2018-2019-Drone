@@ -2328,11 +2328,13 @@ def imgCameraDrone():
 			print(byte_matrix)
 			print(byte_matrix.shape)
 		
-			output_file = open('CameraDrone/' + str(time.time()), 'wb')
-		
-			np.save(output_file, byte_matrix)
-		
-			output_file.close()
+#			output_file = open('CameraDrone/' + str(time.time()), 'wb')
+#		
+#			np.save(output_file, byte_matrix)
+#		
+#			output_file.close()
+			
+			cv2.imwrite('CameraDrone/' + str(time.time()).replace(".", "_") + ".jpg", frame) 
 			
 			if cv2.waitKey(1) & 0xFF == 27:
 				# escape key pressed
@@ -2496,11 +2498,13 @@ def imgGlobalShutter():
 #		print(byte_matrix)
 #		print(byte_matrix.shape)
 		
-		output_file = open('GlobalShutter/' + str(time.time()), 'wb')
+#		output_file = open('GlobalShutter/' + str(time.time()), 'wb')
+#		
+#		np.save(output_file, byte_matrix)
+#		
+#		output_file.close()
 		
-		np.save(output_file, byte_matrix)
-		
-		output_file.close()
+		cv2.imwrite('GlobalShutter/' + str(time.time()).replace(".", "_") + ".jpg", frame)
 
 		# Press q if you want to end the loop
 #		if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -2696,4 +2700,4 @@ if __name__ == "__main__":
 		drone.land()
 
 
-
+#cv2.imsave(
