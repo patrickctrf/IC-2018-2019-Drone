@@ -2334,7 +2334,7 @@ def imgCameraDrone():
 #		
 #			output_file.close()
 			
-			cv2.imwrite('CameraDrone/' + str(time.time()).replace(".", "_") + ".jpg", frame) 
+			cv2.imwrite('CameraDrone/' + str(time.time()).replace(".", "_") + ".png", frame) 
 			
 			if cv2.waitKey(1) & 0xFF == 27:
 				# escape key pressed
