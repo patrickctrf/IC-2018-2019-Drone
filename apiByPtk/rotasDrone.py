@@ -2644,23 +2644,23 @@ if __name__ == "__main__":
 			elif key == "p":	
 				drone.takeoff()
 				t2.start()
-				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t3.start()
-				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t4.start()
 				t5.start()
-				t6.start()
+				#t6.start()
 				t7.start()
 				t1.start()
 			elif key == "t":	
 				drone.thrust(50,50,50,50)
 				t2.start()
-				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t3.start()
-				time.sleep(5)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
+				time.sleep(10)# ROS precisa de tempo para iniciar suas etapas, senao da erro.
 				t4.start()
 				t5.start()
-				t6.start()
+				#t6.start()
 				t7.start()
 				t1.start()
 			elif key == "b":	senoAltitude(drone)

@@ -2055,13 +2055,13 @@ if __name__ == "__main__":
 			elif key == "b":	drone.thrust(15,0,0,0)
 			elif key == "h":	stop = True
 
-			#Checa variação das medições da própria IMU do drone.
-			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
-			print(drone.NavData["demo"][4]);
-			print(drone.NavData["demo"][2][0]);
-			print(drone.NavData["demo"][2][1]);
-			print(drone.NavData["demo"][2][2]);
-			time.sleep(1);#Delay para enxergarmos o dado na tela.
+#			#Checa variacao das medicoes da propria IMU do drone.
+#			for i in range(1, 25): print("\n");#Imprime 25 linhas para limpar a tela.
+#			print(drone.NavData["demo"][4]);
+#			print(drone.NavData["demo"][2][0]);
+#			print(drone.NavData["demo"][2][1]);
+#			print(drone.NavData["demo"][2][2]);
+#			time.sleep(1);#Delay para enxergarmos o dado na tela.
 
 
 	finally:
