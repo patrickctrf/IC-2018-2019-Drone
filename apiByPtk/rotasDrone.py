@@ -2322,11 +2322,11 @@ def imgCameraDrone():
 		running, frame = cam.read()
 		if running:
 			# cv2.imshow('frame', frame)
-			print(frame.shape)
+			# print(frame.shape)
 			
 			byte_matrix = frame
 			# print(byte_matrix)
-			print(byte_matrix.shape)
+			# print(byte_matrix.shape)
 		
 #			output_file = open('CameraDrone/' + str(time.time()), 'wb')
 #		
